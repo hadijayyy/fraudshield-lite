@@ -1,0 +1,23 @@
+model:
+  version: 'v1.0'
+  xgboost:
+    n_estimators: 500
+    max_depth: 6
+    learning_rate: 0.05
+
+thresholds:
+  default: 0.45
+  segments:
+    low_amount: 0.65
+    medium_amount: 0.45
+    high_amount: 0.25
+    new_user: 0.35
+    verified_merchant: 0.70
+
+cost_matrix:
+  fraud_cost: 500000
+  false_positive_cost: 15000
+
+monitoring:
+  psi_threshold: 0.2
+  auc_drop_threshold: 0.03

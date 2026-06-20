@@ -1,0 +1,86 @@
+{
+  "original_temporal": {
+    "description": "Train steps<=600, Test steps>600",
+    "train_fraud_rate": 0.0011,
+    "test_fraud_rate": 0.01589,
+    "roc_auc": 0.9999,
+    "pr_auc": 0.9944,
+    "precision": 0.9699,
+    "recall": 1.0,
+    "f1": 0.9847,
+    "note": "Inflated by 14x fraud rate difference"
+  },
+  "stratified_80_20": {
+    "split": "stratified_80_20",
+    "train_rows": 400000,
+    "test_rows": 100000,
+    "train_fraud_rate": 0.00134,
+    "test_fraud_rate": 0.00134,
+    "roc_auc": 1.0,
+    "pr_auc": 0.963,
+    "precision": 0.7571,
+    "recall": 1.0,
+    "f1": 0.8617,
+    "confusion_matrix": [
+      [
+        99823,
+        43
+      ],
+      [
+        0,
+        134
+      ]
+    ]
+  },
+  "walk_forward": [
+    {
+      "fold": 1,
+      "train_steps": "1-300",
+      "test_steps": "302-500",
+      "train_fraud": 291,
+      "test_fraud": 155,
+      "train_fraud_rate": 0.00091,
+      "test_fraud_rate": 0.00101,
+      "roc_auc": 1.0,
+      "pr_auc": 0.9753,
+      "precision": 0.8564,
+      "recall": 1.0,
+      "f1": 0.9226
+    },
+    {
+      "fold": 2,
+      "train_steps": "1-450",
+      "test_steps": "452-600",
+      "train_fraud": 408,
+      "test_fraud": 134,
+      "train_fraud_rate": 0.00086,
+      "test_fraud_rate": 0.00709,
+      "roc_auc": 0.9998,
+      "pr_auc": 0.9841,
+      "precision": 0.9301,
+      "recall": 0.9925,
+      "f1": 0.9603
+    },
+    {
+      "fold": 3,
+      "train_steps": "1-600",
+      "test_steps": "602-742",
+      "train_fraud": 542,
+      "test_fraud": 129,
+      "train_fraud_rate": 0.0011,
+      "test_fraud_rate": 0.01601,
+      "roc_auc": 0.9999,
+      "pr_auc": 0.9944,
+      "precision": 0.9699,
+      "recall": 1.0,
+      "f1": 0.9847
+    }
+  ],
+  "walk_forward_mean": {
+    "roc_auc": 0.9999,
+    "pr_auc": 0.9846,
+    "precision": 0.9188,
+    "recall": 0.9975,
+    "f1": 0.9559
+  }
+}

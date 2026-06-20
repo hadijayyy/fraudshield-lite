@@ -1,0 +1,73 @@
+{
+  "dataset": {
+    "total": 500000,
+    "train": 491881,
+    "test": 8119,
+    "features": 29
+  },
+  "fraud_rates": {
+    "train": 0.0011,
+    "test": 0.01589
+  },
+  "roc_auc": 0.9999,
+  "pr_auc": 0.9846,
+  "threshold_optimal": 0.6303,
+  "confusion_matrix_default": [
+    [
+      7986,
+      4
+    ],
+    [
+      0,
+      129
+    ]
+  ],
+  "confusion_matrix_optimal": [
+    [
+      7987,
+      3
+    ],
+    [
+      4,
+      125
+    ]
+  ],
+  "best_iteration": 2,
+  "evaluation_method": "walk_forward_3fold",
+  "note": "Walk-forward CV: expanding window, time-respecting split. Fold 1: steps 301-500, Fold 2: 451-600, Fold 3: 601-742",
+  "precision": 0.9188,
+  "recall": 0.9975,
+  "f1": 0.9559,
+  "walk_forward_folds": [
+    {
+      "fold": 1,
+      "train": "1-300",
+      "test": "301-500",
+      "roc_auc": 1.0,
+      "pr_auc": 0.9753,
+      "precision": 0.8564,
+      "recall": 1.0,
+      "f1": 0.9226
+    },
+    {
+      "fold": 2,
+      "train": "1-450",
+      "test": "451-600",
+      "roc_auc": 0.9998,
+      "pr_auc": 0.9841,
+      "precision": 0.9301,
+      "recall": 0.9925,
+      "f1": 0.9603
+    },
+    {
+      "fold": 3,
+      "train": "1-600",
+      "test": "601-742",
+      "roc_auc": 0.9999,
+      "pr_auc": 0.9944,
+      "precision": 0.9699,
+      "recall": 1.0,
+      "f1": 0.9847
+    }
+  ]
+}

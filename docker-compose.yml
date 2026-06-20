@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      target: production
+    container_name: fraudshield-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models
+      - ./logs:/app/logs
+      - ./config:/app/config
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: uvicorn src.api:app --host 0.0.0.0 --port 8000 --reload
+
+  dashboard:
+    build:
+      context: .
+      target: production
+    container_name: fraudshield-dashboard
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: streamlit run app/dashboard.py --server.port 8501 --server.address 0.0.0.0
