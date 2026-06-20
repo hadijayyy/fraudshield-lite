@@ -336,25 +336,39 @@ fraudshield-lite/
 
 ## 🚀 How to Run
 
-### Quick Start
+### Quick Start (Clone → Data → Run)
 ```bash
-git clone <repo-url> && cd fraudshield-lite
+git clone https://github.com/hadijayyy/fraudshield-lite.git
+cd fraudshield-lite
 
-# Install dependencies
+# 1. Install dependencies
 pip install -r requirements.txt
 
-# Run baseline comparison (Dummy + LR + XGBoost)
+# 2. Download data + generate features (needs Kaggle access)
+python setup_data.py
+
+# 3. Run baseline comparison (Dummy + LR + XGBoost)
 python run_baselines.py
 
-# Start the API server
-python -m uvicorn src.api:app --host 0.0.0.0 --port 8000
+# 4. Start the API server
+uvicorn src.api:app --host 0.0.0.0 --port 8000
 
-# Start the dashboard
+# 5. Start the dashboard
 streamlit run app/dashboard.py
-
-# Run tests
-pytest tests/
 ```
+
+### Data Setup
+```bash
+# Full setup (downloads from Kaggle, ~177MB download)
+python setup_data.py
+
+# If you already have PaySim CSV locally
+python setup_data.py --skip-download
+
+# Or manually place subset_500k.csv in data/ directory
+```
+
+> **Note**: `data/*.csv` is gitignored (regeneratable). Run `setup_data.py` after cloning.
 
 ### Docker
 ```bash
