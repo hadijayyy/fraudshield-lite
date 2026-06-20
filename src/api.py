@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field
 import xgboost as xgb
 
 from .utils import load_config, setup_logging
+from .features import get_feature_columns
 
 logger = logging.getLogger(__name__)
 
@@ -127,36 +128,22 @@ async def predict(request: PredictRequest) -> PredictResponse:
         raise HTTPException(status_code=503, detail="Model not loaded")
 
     # Build a feature vector from the request.
-    # The model expects 29 features matching the training schema.
-    # We build a DataFrame with the expected feature names (zero-filled)
-    # and fill in whatever the request provides via extra_features.
+    # Use get_feature_columns() as the source of truth (36 features).
     threshold = config.get("thresholds", {}).get("default", 0.45) if config else 0.45
 
     try:
-        # Retrieve expected feature names from the model dump
-        feature_names = getattr(model, "feature_names_in_", None)
-        if feature_names is None:
-            # Fallback: try to read from model's learner attribute
-            booster = model.get_booster()
-            fmap = booster.get_score(importance_type="weight")
-            # If we can't get feature names, fall through with a simple
-            # prediction on the raw amount
-            feature_names = list(fmap.keys()) if fmap else None
+        feature_names = get_feature_columns()
 
-        if feature_names is not None and len(feature_names) > 0:
-            # Build a zero-filled feature vector
-            feature_dict = {name: 0.0 for name in feature_names}
-            # Fill in provided extra features
-            feature_dict.update(request.extra_features)
-            # Override amount if it's in the features
-            if "amount" in feature_dict:
-                feature_dict["amount"] = request.amount
+        # Build a zero-filled feature vector
+        feature_dict = {name: 0.0 for name in feature_names}
+        # Fill in provided extra features
+        feature_dict.update(request.extra_features)
+        # Override amount if it's in the features
+        if "amount" in feature_dict:
+            feature_dict["amount"] = request.amount
 
-            x_input = pd.DataFrame([feature_dict])[feature_names].values
-            fraud_probability = float(model.predict_proba(x_input)[0, 1])
-        else:
-            # No feature metadata available — use amount as a rough signal
-            fraud_probability = 1.0 / (1.0 + np.exp(-request.amount / 1e6))
+        x_input = pd.DataFrame([feature_dict])[feature_names].values
+        fraud_probability = float(model.predict_proba(x_input)[0, 1])
 
         prediction = 1 if fraud_probability >= threshold else 0
 
