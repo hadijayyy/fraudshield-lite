@@ -37,5 +37,20 @@
     "fp": 4,
     "fn": 0,
     "tn": 7986
+  },
+  {
+    "model": "XGBoost (trained) \u2014 with velocity features",
+    "roc_auc": 0.9999,
+    "pr_auc": 0.9796,
+    "f1_fraud": 0.9193,
+    "precision_fraud": 0.8607,
+    "recall_fraud": 0.9953,
+    "net_value_rp": 68595000,
+    "tp": 129,
+    "fp": 13,
+    "fn": 0,
+    "tn": 7977,
+    "features": 36,
+    "velocity_features_added": 7
   }
 ]

@@ -40,7 +40,7 @@ A lightweight fraud detection system using the [PaySim](https://www.kaggle.com/d
 
 ---
 
-## 🔧 Feature Engineering (30 features)
+## 🔧 Feature Engineering (36 features)
 
 ### Balance Features (6)
 | Feature | Description |
@@ -65,6 +65,19 @@ A lightweight fraud detection system using the [PaySim](https://www.kaggle.com/d
 | `dest_amount_cumsum` | Cumulative amount per receiver |
 | `amount_dev_from_orig_mean` | Amount deviation from sender's average |
 | `amount_ratio_to_orig_mean` | Amount ratio to sender's average |
+
+### Rolling Velocity Features (7) — NEW
+| Feature | Description |
+|---------|-------------|
+| `tx_count_24h` | Tx count from same sender in last 24 steps |
+| `tx_count_7d` | Tx count from same sender in last 168 steps |
+| `amt_sum_24h` | Total amount from same sender in last 24 steps |
+| `amt_sum_7d` | Total amount from same sender in last 168 steps |
+| `amt_mean_24h` | Average amount from same sender in last 24 steps |
+| `amt_mean_7d` | Average amount from same sender in last 168 steps |
+| `avg_time_between_tx` | Avg time between consecutive same-sender transactions |
+
+> These rolling window features use a merge-based self-join approach for efficiency. On PaySim data, repeat-origin transactions are rare (52/500K origins), so these features provide limited signal — but they are essential infrastructure for real-world deployment with returning customers.
 
 ### Transaction Type (5) — One-hot encoded
 ### Temporal Features (2)
@@ -208,7 +221,7 @@ Actual  Legit  [7,986]    [4]    ← 0.05% FP rate
 | Phase | Duration | Deliverable |
 |-------|:--------:|-------------|
 | Data collection & EDA | 1 week | Dataset, visualizations |
-| Feature engineering | 1 week | 29 features, velocity patterns |
+| Feature engineering & EDA | 1 week | 36 features, velocity patterns |
 | Model training & validation | 1 week | XGBoost, walk-forward CV |
 | API development | 3 days | FastAPI endpoint, < 20ms |
 | Dashboard | 2 days | Streamlit fraud reviewer UI |
