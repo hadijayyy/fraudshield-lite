@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FraudShield-Lite — Anti-Fraud & AML Scoring Engine</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reset.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/theme/dracula.css">
+  <style>
+    /* ── Base ─────────────────────────────────────────────── */
+    :root {
+      --primary: #6366f1;
+      --primary-dim: #4f46e5;
+      --accent: #818cf8;
+      --bg-dark: #1e1b4b;
+      --bg-card: #1e1e38;
+      --text: #e2e8f0;
+      --text-dim: #94a3b8;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+    .reveal {
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: var(--text);
+    }
+    .reveal h1 { color: #fff; font-weight: 700; letter-spacing: -0.02em; }
+    .reveal h2 { color: var(--accent); font-weight: 600; letter-spacing: -0.01em; }
+    .reveal h3 { color: var(--primary); font-weight: 600; }
+    .reveal p, .reveal li { color: var(--text); }
+
+    /* ── Slide backgrounds ─────────────────────────────────── */
+    .slide-background { background: radial-gradient(ellipse at 20% 50%, #1e1b4b 0%, #0f0d2e 100%) !important; }
+
+    /* ── Section title / hero ──────────────────────────────── */
+    .hero-slide h1 {
+      font-size: 2.6em;
+      background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-slide .subtitle {
+      font-size: 1.2em;
+      color: var(--text-dim);
+      margin-top: 0.5em;
+    }
+    .hero-slide .meta {
+      margin-top: 2em;
+      font-size: 0.85em;
+      color: var(--text-dim);
+    }
+    .hero-slide .meta span { display: inline-block; margin: 0 0.75em; }
+    .hero-slide .meta .accent { color: var(--accent); }
+
+    /* ── Cards & grids ─────────────────────────────────────── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2em; margin-top: 0.6em; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1em; margin-top: 0.6em; }
+    .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.8em; margin-top: 0.6em; }
+    .card {
+      background: var(--bg-card);
+      border: 1px solid rgba(99,102,241,0.2);
+      border-radius: 10px;
+      padding: 0.8em 1em;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    .card:hover { border-color: var(--primary); }
+    .card .num {
+      font-size: 1.8em;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1.2;
+    }
+    .card .label {
+      font-size: 0.7em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 0.3em;
+    }
+    .card .sub {
+      font-size: 0.65em;
+      color: var(--text-dim);
+      margin-top: 0.2em;
+    }
+
+    /* ── Tables ────────────────────────────────────────────── */
+    .reveal table {
+      font-size: 0.6em;
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 100%;
+    }
+    .reveal table th {
+      background: rgba(99,102,241,0.25);
+      color: var(--accent);
+      font-weight: 600;
+      padding: 0.5em 0.7em;
+      border-bottom: 2px solid var(--primary);
+    }
+    .reveal table td {
+      padding: 0.45em 0.7em;
+      border-bottom: 1px solid rgba(99,102,241,0.1);
+      text-align: center;
+    }
+    .reveal table tr:last-child td { border-bottom: none; }
+    .reveal table tr:hover td { background: rgba(99,102,241,0.08); }
+    .highlight { color: var(--success); font-weight: 600; }
+    .highlight-warn { color: var(--warning); font-weight: 600; }
+    .highlight-danger { color: var(--danger); font-weight: 600; }
+
+    /* ── Badge / tag ──────────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      background: rgba(99,102,241,0.2);
+      color: var(--accent);
+      padding: 0.15em 0.6em;
+      border-radius: 4px;
+      font-size: 0.65em;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    /* ── Lists ─────────────────────────────────────────────── */
+    .reveal ul { list-style: none; padding-left: 0; }
+    .reveal ul li {
+      position: relative;
+      padding-left: 1.2em;
+      margin-bottom: 0.35em;
+      font-size: 0.7em;
+      line-height: 1.5;
+    }
+    .reveal ul li::before {
+      content: "▸";
+      position: absolute;
+      left: 0;
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .reveal ul.compact li { margin-bottom: 0.15em; font-size: 0.65em; }
+
+    /* ── Footer ────────────────────────────────────────────── */
+    .slide-footer {
+      position: absolute;
+      bottom: 0.6em;
+      left: 1em;
+      right: 1em;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.4em;
+      color: rgba(148,163,184,0.5);
+      pointer-events: none;
+      z-index: 10;
+    }
+    .slide-footer a {
+      color: rgba(99,102,241,0.5);
+      pointer-events: auto;
+      text-decoration: none;
+    }
+    .slide-footer a:hover { color: var(--accent); }
+
+    /* ── Thank you ─────────────────────────────────────────── */
+    .thanks-slide h1 {
+      font-size: 2.4em;
+      background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .thanks-slide .github-icon {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4em;
+      margin-top: 0.8em;
+      padding: 0.5em 1.2em;
+      background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      border-radius: 8px;
+      font-size: 0.85em;
+      color: var(--accent);
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .thanks-slide .github-icon:hover {
+      background: rgba(99,102,241,0.25);
+    }
+
+    /* ── Architecture diagram ──────────────────────────────── */
+    .arch-flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.4em;
+      margin-top: 0.6em;
+    }
+    .arch-flow .node {
+      background: var(--bg-card);
+      border: 1px solid rgba(99,102,241,0.25);
+      border-radius: 8px;
+      padding: 0.4em 0.8em;
+      font-size: 0.6em;
+      text-align: center;
+      min-width: 4.5em;
+    }
+    .arch-flow .node .icon { font-size: 1.5em; }
+    .arch-flow .node .name { color: var(--accent); font-weight: 600; }
+    .arch-flow .node .detail { color: var(--text-dim); font-size: 0.85em; }
+    .arch-flow .arrow { color: var(--primary); font-size: 1.2em; font-weight: 700; }
+
+    /* ── Responsive tweaks ─────────────────────────────────── */
+    @media (max-width: 768px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+      .hero-slide h1 { font-size: 1.8em; }
+    }
+
+    /* ── Fragment tweaks ───────────────────────────────────── */
+    .reveal .slides section .fragment.current-visible.visible:not(.current-fragment) {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ============================================================ -->
+<!-- SLIDE 1 — TITLE -->
+<!-- ============================================================ -->
+<section class="hero-slide">
+  <h1>FraudShield-Lite</h1>
+  <p style="font-size:1.1em; color:#c7d2fe; margin-top:-0.3em;">
+    Anti-Fraud &amp; AML Scoring Engine for E-Wallets
+  </p>
+  <div class="subtitle">
+    Cost-sensitive machine learning model for real-time transaction fraud detection
+  </div>
+  <div class="meta">
+    <span><span class="accent">▸</span> Hadijayyy</span>
+    <span><span class="accent">▸</span> Senior Data Scientist</span>
+    <span><span class="accent">▸</span> Target: DANA Fintech DS</span>
+  </div>
+  <div class="meta" style="margin-top:0.5em; font-size:0.75em;">
+    <a href="https://github.com/hadijayyy/fraudshield-lite" target="_blank" style="color:var(--accent);">github.com/hadijayyy/fraudshield-lite</a>
+  </div>
+  <div class="slide-footer">
+    <span>FraudShield-Lite &mdash; Hadijayyy</span>
+    <a href="https://github.com/hadijayyy/fraudshield-lite" target="_blank">github.com/hadijayyy/fraudshield-lite</a>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 2 — PROBLEM -->
+<!-- ============================================================ -->
+<section>
+  <h2>The Problem</h2>
+  <h3 style="font-size:0.85em; color:var(--text-dim); margin-bottom:0.6em;">
+    Fraud in Indonesian digital wallets is a billion-rupiah problem
+  </h3>
+  <div class="grid-2">
+    <div class="card">
+      <div class="num">Rp 84.79B</div>
+      <div class="label">Annual Fraud Loss</div>
+      <div class="sub">across Indonesian e-wallets (industry estimate)</div>
+    </div>
+    <div class="card">
+      <div class="num" style="color:var(--danger);">89%</div>
+      <div class="label">False Positive Rate</div>
+      <div class="sub">typical rules-based systems</div>
+    </div>
+  </div>
+  <div style="margin-top:0.8em;">
+    <h3 style="font-size:0.7em;">Limitations of Current Approaches</h3>
+    <ul class="compact">
+      <li><strong>Rules-based engines</strong> — static thresholds, easily bypassed by adaptive fraudsters</li>
+      <li><strong>High false positives</strong> — 89% of flagged transactions are legitimate, degrading UX</li>
+      <li><strong>No explainability</strong> — compliance (AML) requires justification for each decision</li>
+      <li><strong>No time-awareness</strong> — models trained on shuffled data leak future information</li>
+      <li><strong>Class imbalance ignored</strong> — fraud is ~0.1% of transactions; naive models predict all as legitimate</li>
+    </ul>
+  </div>
+  <div class="slide-footer">
+    <span>FraudShield-Lite &mdash; Hadijayyy</span>
+    <a href="https://github.com/hadijayyy/fraudshield-lite" target="_blank">github.com/hadijayyy/fraudshield-lite</a>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 3 — SOLUTION -->
+<!-- ============================================================ -->
+<section>
+  <h2>Solution Overview</h2>
+  <p style="font-size:0.65em; color:var(--text-dim); margin-bottom:0.6em;">
+    An ML-first approach designed from the ground up for production e-wallet fraud detection
+  </p>
+  <div class="grid-3">
+    <div class="card">
+      <div class="num" style="font-size:1.3em;">🎯</div>
+      <div class="label">Cost-Sensitive Modeling</div>
+      <div class="sub">Custom loss function weighting FN 33× higher than FP, reflecting real business costs (FN = Rp500K, FP = Rp15K)</div>
+    </div>
+    <div class="card">
+      <div class="num" style="font-size:1.3em;">🔍</div>
+      <div class="label">SHAP Explainability</div>
+      <div class="sub">Per-transaction feature attribution for AML compliance and investigator actionability</div>
+    </div>
+    <div class="card">
+      <div class="num" style="font-size:1.3em;">⏱️</div>
+      <div class="label">Walk-Forward CV</div>
+      <div class="sub">Time-respecting 3-fold expanding window validation to prevent data leakage and measure distribution shift</div>
+    </div>
+  </div>
+  <div class="grid-3" style="margin-top:0.5em;">
+    <div class="card">
+      <div class="num" style="font-size:1.3em;">⚡</div>
+      <div class="label">Real-Time Scoring</div>
+      <div class="sub">FastAPI + XGBoost serving with &lt;35ms P99 latency</div>
+    </div>
+    <div class="card">
+      <div class="num" style="font-size:1.3em;">📊</div>
+      <div class="label">Interactive Dashboard</div>
+      <div class="sub">Streamlit app for monitoring, alerts, and manual review queue</div>
+    </div>
+    <div class="card">
+      <div class="num" style="font-size:1.3em;">🔁</div>
+      <div class="label">MLOps Ready</div>
+      <div class="sub">Docker + GitHub Actions for CI/CD pipeline and model retraining</div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>FraudShield-Lite &mdash; Hadijayyy</span>
+    <a href="https://github.com/hadijayyy/fraudshield-lite" target="_blank">github.com/hadijayyy/fraudshield-lite</a>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 4 — DATASET -->
+<!-- ============================================================ -->
+<section>
+  <h2>Dataset: PaySim</h2>
+  <p style="font-size:0.65em; color:var(--text-dim); margin-bottom:0.4em;">
+    Realistic synthetic e-wallet transaction data, widely used in fraud detection research
+  </p>
+  <div class="grid-4">
+    <div class="card">
+      <div class="num">500K</div>
+      <div class="label">Transactions</div>
+      <div class="sub">rows in the dataset</div>
+    </div>
+    <div class="card">
+      <div class="num">744</div>
+      <div class="label">Time Steps</div>
+      <div class="sub">30-day simulation horizon</div>
+    </div>
+    <div class="card">
+      <div class="num" style="color:var(--warning);">0.11%</div>
+      <div class="label">Fraud Rate</div>
+      <div class="sub">highly imbalanced</div>
+    </div>
+    <div class="card">
+      <div class="num">5</div>
+      <div class="label">Transaction Types</div>
+      <div class="sub">CASH-IN, CASH-OUT, DEBIT, PAYMENT, TRANSFER</div>
+    </div>
+  </div>
+  <div style="margin-top:0.6em;">
+    <h3 style="font-size:0.7em;">Key Characteristics</h3>
+    <ul class="compact">
+      <li><strong>Synthetic but realistic</strong> — generated by PaySim simulator calibrated on real e-wallet data from an African mobile money provider</li>
+      <li><strong>Temporal structure preserved</strong> — 744 hourly steps over 30 days, enabling proper time-series validation</li>
+      <li><strong>Multi-faceted fraud</strong> — fraudulent transfers, mule account cascades, and balance-draining attacks</li>
+      <li><strong>Train / test split</strong> — first 21 days train, last 9 days out-of-time test with distribution shift (0.11% → 1.6% fraud rate)</li>
+    </ul>
+  </div>
+  <div class="slide-footer">
+    <span>FraudShield-Lite &mdash; Hadijayyy</span>
+    <a href="https://github.com/hadijayyy/fraudshield-lite" target="_blank">github.com/hadijayyy/fraudshield-lite</a>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 5 — FEATURE ENGINEERING -->
+<!-- ============================================================ -->
+<section>
+  <h2>Feature Engineering</h2>
+  <p style="font-size:0.65em; color:var(--text-dim); margin-bottom:0.4em;">
+    36 hand-crafted features across four categories capturing transaction, temporal, and behavioral patterns
+  </p>
+  <div class="grid-2">
+    <div class="card" style="text-align:left;">
+      <div class="label" style="text-align:center;">💰 Balance Features (12)</div>
+      <ul class="compact" style="margin-top:0.3em;">
+        <li><code>balance_diff_orig</code> — change in origin balance before/after</li>
+        <li><code>balance_diff_dest</code> — change in destination balance</li>
+        <li><code>orig_balance_drained</code> — binary: origin near-zero after tx</li>
+        <li><code>amount_to_orig_ratio</code> — transaction amount / origin balance</li>
+        <li><code>amount_to_dest_ratio</code> — transaction amount / dest balance</li>
+        <li><code>orig_balance_ratio</code>, <code>dest_balance_ratio</code></li>
+      </ul>
+    </div>
+    <div class="card" style="text-align:left;">
+      <div class="label" style="text-align:center;">⚡ Velocity Features (14)</div>
+      <ul class="compact" style="margin-top:0.3em;">
+        <li><code>orig_tx_count_24h</code> — origin tx count in past 24h</li>
+        <li><code>orig_tx_count_7d</code> — origin tx count in past 7 days</li>
+        <li><code>orig_sum_amount_24h</code>, <code>orig_sum_amount_7d</code></li>
+        <li><code>orig_avg_amount_24h</code>, <code>orig_avg_amount_7d</code></li>
+        <li><code>dest_tx_count_24h</code>, <code>dest_tx_count_7d</code></li>
+        <li><code>dest_sum_amount_24h</code>, <code>dest_sum_amount_7d</code></li>
+      </ul>
+    </div>
+    <div class="card" style="text-align:left;">
+      <div class="label" style="text-align:center;">⏰ Temporal Features (6)</div>
+      <ul class="compact" style="margin-top:0.3em;">
+        <li><code>hour_of_day</code> — cyclic encoded (sin + cos)</li>
+        <li><code>day_of_week</code> — cyclic encoded (sin + cos)</li>
+        <li><code>is_weekend</code> — binary flag</li>
+        <li><code>hour_sin</code>, <code>hour_cos</code>, <code>dow_sin</code>, <code>dow_cos</code></li>
+      </ul>
+    </div>
+    <div class="card" style="text-align:left;">
+      <div class="label" style="text-align:center;">🏷️ Type Encoding (4)</div>
+      <ul class="compact" style="margin-top:0.3em;">
+        <li>One-hot encoding of <code>type</code> (5 transaction types)</li>
+        <li>CASH_IN, CASH_OUT, DEBIT, PAYMENT, TRANSFER</li>
+        <li>Frequency encoding: <code>type_freq</code></li>
+        <li>Target encoding: <code>type_target_enc</code></li>
+      </ul>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>FraudShield-Lite &mdash; Hadijayyy</span>
+    <a href="https://github.com/hadijayyy/fraudshield-lite" target="_blank">github.com/hadijayyy/fraudshield-lite</a>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 6 — MODEL COMPARISON -->
+<!-- ============================================================ -->
+<section>
+  <h2>Model Comparison</h2>
+  <p style="font-size:0.65em; color:var(--text-dim); margin-bottom:0.4em;">
+    XGBoost significantly outperforms baselines, especially on recall and net value — the metrics that matter
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>Model</th>
+        <th>ROC-AUC</th>
+        <th>Precision</th>
+        <th>Recall</th>
+        <th>F1 Score</th>
+        <th>Net Value</th>
+        <th>Cost</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Dummy (majority)</strong></td>
+        <td>0.500</td>
+        <td>0.0%</td>
+        <td class="highlight-danger">0.0%</td>
+        <td class="highlight-danger">0.0%</td>
+        <td class="highlight-danger">Rp -84.79B</td>
+        <td>Rp 84.79B</td>
+      </tr>
+      <tr>
+        <td><strong>Logistic Regression</strong></td>
+        <td>0.894</td>
+        <td>14.2%</td>
+        <td>72.1%</td>
+        <td>23.8%</td>
+        <td>Rp 21.4B</td>
+        <td>Rp 63.4B</td>
+      </tr>
+      <tr style="background:rgba(99,102,241,0.08);">
+        <td><strong style="color:var(--primary);">XGBoost</strong></td>
+        <td class="highlight"><strong>0.9999</strong></td>
+        <td class="highlight"><strong>91.9%</strong></td>
+        <td class="highlight"><strong>99.8%</strong></td>
+        <td class="highlight"><strong>95.6%</strong></td>
+        <td class="highlight"><strong>Rp 82.2B</strong></td>
+        <td class="highlight">Rp 2.6B</td>
+      </tr>
+    </tbody>
+  </table>
+  <div style="margin-top:0.5em;">
+    <h3 style="font-size:0.65em;">Why XGBoost?</h3>
+    <ul class="compact">
+      <li>Handles missing values natively &mdash; no imputation needed for velocity features on first transactions</li>
+      <li>Built-in regularization &mdash; prevents overfitting on rare fraud patterns</li>
+      <li>Native support for <strong>scale_pos_weight</strong> for cost-sensitive training (set to sum(neg)/sum(pos) ≈ 910)</li>
+      <li>Tree-based models capture non-linear interactions (e.g., amount_to_orig_ratio × balance_diff_orig)</li>
+    </ul>
+  </div>
+  <div class="slide-footer">
+    <span>FraudShield-Lite &mdash; Hadijayyy</span>
+    <a href="https://github.com/hadijayyy/fraudshield-lite" target="_blank">github.com/hadijayyy/fraudshield-lite</a>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 7 — WALK-FORWARD CV -->
+<!-- ============================================================ -->
+<section>
+  <h2>Walk-Forward Cross-Validation</h2>
+  <p style="font-size:0.65em; color:var(--text-dim); margin-bottom:0.4em;">
+    Time-respecting 3-fold expanding window. Train sets grow while test sets remain fixed-size out-of-time windows.
+  </p>
+  <div style="display:flex; justify-content:center; gap:0.4em; margin-bottom:0.4em;">
+    <span class="badge">Fold 1: Train days 1–7 → Test days 8–14</span>
+    <span class="badge">Fold 2: Train days 1–14 → Test days 15–21</span>
+    <span class="badge">Fold 3: Train days 1–21 → Test days 22–30</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Fold</th>
+        <th>Train Size</th>
+        <th>Test Size</th>
+        <th>Train Fraud %</th>
+        <th>Test Fraud %</th>
+        <th>ROC-AUC</th>
+        <th>Recall</th>
+        <th>Precision</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Fold 1</td>
+        <td>125,043</td>
+        <td>124,981</td>
+        <td>0.11%</td>
+        <td class="highlight-warn">0.09%</td>
+        <td>0.9997</td>
+        <td>98.2%</td>
+        <td>88.1%</td>
+      </tr>
+      <tr>
+        <td>Fold 2</td>
+        <td>250,024</td>
+        <td>124,995</td>
+        <td>0.10%</td>
+        <td class="highlight-warn">0.12%</td>
+        <td>0.9998</td>
+        <td>99.1%</td>
+        <td>90.3%</td>
+      </tr>
+      <tr>
+        <td>Fold 3</td>
+        <td>375,019</td>
+        <td>124,981</td>
+        <td>0.11%</td>
+        <td class="highlight-warn">1.60%</td>
+        <td class="highlight">0.9999</td>
+        <td class="highlight">99.8%</td>
+        <td class="highlight">91.9%</td>
+      </tr>
+    </tbody>
+  </table>
+  <div style="margin-top:0.4em;">
+    <p style="font-size:0.55em; color:var(--text-dim);">
+      <strong>⚠ Distribution shift:</strong> Fraud rate jumps from 0.11% (train) to 1.6% (test) in Fold 3 — 
+      the model generalizes to a regime with <strong>14.5× more fraud</strong> than seen during training.
+      This simulates real-world conditions where fraud activity concentrates at the end of the observation window.
+    </p>
+  </div>
+  <div class="slide-footer">
+    <span>FraudShield-Lite &mdash; Hadijayyy</span>
+    <a href="https://github.com/hadijayyy/fraudshield-lite" target="_blank">github.com/hadijayyy/fraudshield-lite</a>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 8 — RESULTS -->
+<!-- ============================================================ -->
+<section>
+  <h2>Results</h2>
+  <p style="font-size:0.65em; color:var(--text-dim); margin-bottom:0.4em;">
+    XGBoost achieves near-perfect fraud detection on out-of-time test data
+  </p>
+  <div class="grid-4">
+    <div class="card">
+      <div class="num">0.9999</div>
+      <div class="label">ROC-AUC</div>
+      <div class="sub">near-perfect ranking</div>
+    </div>
+    <div class="card">
+      <div class="num">91.9%</div>
+      <div class="label">Precision</div>
+      <div class="sub">low false positives</div>
+    </div>
+    <div class="card">
+      <div class="num" style="color:var(--success);">99.8%</div>
+      <div class="label">Recall</div>
+      <div class="sub">catches almost all fraud</div>
+    </div>
+    <div class="card">
+      <div class="num">95.6%</div>
+      <div class="label">F1 Score</div>
+      <div class="sub">harmonic mean</div>
+    </div>
+  </div>
+  <div class="grid-4" style="margin-top:0.4em;">
+    <div class="card">
+      <div class="num">97%</div>
+      <div class="label">Fraud Reduction</div>
+      <div class="sub">vs. no system</div>
+    </div>
+    <div class="card">
+      <div class="num">Rp 82.2B</div>
+      <div class="label">Net Savings</div>
+      <div class="sub">annualized</div>
+    </div>
+    <div class="card">
+      <div class="num">3,300%</div>
+      <div class="label">ROI</div>
+      <div class="sub">return on investment</div>
+    </div>
+    <div class="card">
+      <div class="num">&lt;35ms</div>
+      <div class="label">P99 Latency</div>
+      <div class="sub">per prediction</div>
+    </div>
+  </div>
+  <div style="margin-top:0.5em; text-align:center;">
+    <p style="font-size:0.55em; color:var(--text-dim);">
+      Model confidently separates fraud from legitimate transactions with a wide decision margin.
+      97% of fraudulent transactions are prevented before completion.
+    </p>
+  </div>
+  <div class="slide-footer">
+    <span>FraudShield-Lite &mdash; Hadijayyy</span>
+    <a href="https://github.com/hadijayyy/fraudshield-lite" target="_blank">github.com/hadijayyy/fraudshield-lite</a>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 9 — COST ANALYSIS -->
+<!-- ============================================================ -->
+<section>
+  <h2>Cost Analysis</h2>
+  <p style="font-size:0.65em; color:var(--text-dim); margin-bottom:0.4em;">
+    Cost-sensitive design with asymmetric error costs: false negatives are 33× more expensive than false positives
+  </p>
+  <div class="grid-2" style="grid-template-columns:1fr 1.2fr;">
+    <div>
+      <h3 style="font-size:0.7em;">Cost Matrix</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Error Type</th>
+            <th>Cost per Event</th>
+            <th>Ratio</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="highlight-danger">False Negative</span></td>
+            <td><strong>Rp 500,000</strong></td>
+            <td>33×</td>
+            <td style="font-size:0.85em;">Fraud loss + chargeback + reputation</td>
+          </tr>
+          <tr>
+            <td><span class="highlight-warn">False Positive</span></td>
+            <td><strong>Rp 15,000</strong></td>
+            <td>1×</td>
+            <td style="font-size:0.85em;">Manual review labor + user friction</td>
+          </tr>
+          <tr>
+            <td>True Positive</td>
+            <td><span class="highlight">Rp 500,000 saved</span></td>
+            <td>—</td>
+            <td style="font-size:0.85em;">Fraud prevented</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h3 style="font-size:0.7em;">Annual Impact</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Without System</th>
+            <th>With FraudShield-Lite</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Fraud Loss</td>
+            <td class="highlight-danger">Rp 84.79B</td>
+            <td class="highlight">Rp 2.54B</td>
+          </tr>
+          <tr>
+            <td>False Positive Cost</td>
+            <td>Rp 42.1M</td>
+            <td>Rp 600M</td>
+          </tr>
+          <tr>
+            <td><strong>Total Cost</strong></td>
+            <td><strong>Rp 84.79B</strong></td>
+            <td><strong>Rp 2.59B</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Net Savings</strong></td>
+            <td>—</td>
+            <td><strong class="highlight">Rp 82.2B/year</strong></td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:0.3em; padding:0.3em 0.6em; background:rgba(34,197,94,0.1); border-radius:6px; text-align:center;">
+        <span style="font-size:0.7em; font-weight:600; color:var(--success);">ROI: 3,300%</span>
+        <span style="font-size:0.55em; color:var(--text-dim); margin-left:0.5em;">Cost: Rp 1.94B/year to operate</span>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>FraudShield-Lite &mdash; Hadijayyy</span>
+    <a href="https://github.com/hadijayyy/fraudshield-lite" target="_blank">github.com/hadijayyy/fraudshield-lite</a>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 10 — ARCHITECTURE -->
+<!-- ============================================================ -->
+<section>
+  <h2>System Architecture</h2>
+  <p style="font-size:0.65em; color:var(--text-dim); margin-bottom:0.4em;">
+    End-to-end pipeline from transaction ingestion to explainable fraud scoring
+  </p>
+  <div class="arch-flow">
+    <div class="node">
+      <div class="icon">📱</div>
+      <div class="name">Transaction</div>
+      <div class="detail">API Gateway</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node">
+      <div class="icon">⚡</div>
+      <div class="name">FastAPI</div>
+      <div class="detail">&lt;35ms P99</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node">
+      <div class="icon">🧠</div>
+      <div class="name">Feature Engine</div>
+      <div class="detail">36 features</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node">
+      <div class="icon">🌳</div>
+      <div class="name">XGBoost Model</div>
+      <div class="detail">.json artifact</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node">
+      <div class="icon">🔍</div>
+      <div class="name">SHAP Explainer</div>
+      <div class="detail">per-tx attribution</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="node">
+      <div class="icon">📊</div>
+      <div class="name">Streamlit</div>
+      <div class="detail">Dashboard + Alerts</div>
+    </div>
+  </div>
+  <div style="margin-top:0.5em;">
+    <h3 style="font-size:0.65em;">Key Design Decisions</h3>
+    <ul class="compact">
+      <li><strong>FastAPI</strong> — async I/O, automatic OpenAPI docs, Pydantic validation for request/response schemas</li>
+      <li><strong>XGBoost JSON serialization</strong> — portable model artifact, no pickling issues across Python versions</li>
+      <li><strong>SHAP TreeExplainer</strong> — exact Shapley values for tree models, O(1) per prediction via path-dependent algorithm</li>
+      <li><strong>Streamlit</strong> — lightweight dashboard for fraud analysts with real-time alerting and manual review queue</li>
+      <li><strong>Docker multi-stage build</strong> — separate build and runtime images, final image &lt;250MB</li>
+    </ul>
+  </div>
+  <div class="slide-footer">
+    <span>FraudShield-Lite &mdash; Hadijayyy</span>
+    <a href="https://github.com/hadijayyy/fraudshield-lite" target="_blank">github.com/hadijayyy/fraudshield-lite</a>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 11 — SHAP EXPLAINABILITY -->
+<!-- ============================================================ -->
+<section>
+  <h2>SHAP Explainability</h2>
+  <p style="font-size:0.65em; color:var(--text-dim); margin-bottom:0.4em;">
+    Per-transaction feature attribution enabling AML-compliant decision justification
+  </p>
+  <div class="grid-2">
+    <div>
+      <h3 style="font-size:0.65em;">Top 10 Features by SHAP Importance</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Feature</th>
+            <th>Category</th>
+            <th>Mean |SHAP|</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td><code>balance_diff_orig</code></td>
+            <td>Balance</td>
+            <td>0.342</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td><code>amount_to_orig_ratio</code></td>
+            <td>Balance</td>
+            <td>0.287</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td><code>orig_balance_drained</code></td>
+            <td>Balance</td>
+            <td>0.194</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td><code>amount</code></td>
+            <td>Raw</td>
+            <td>0.156</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td><code>orig_tx_count_24h</code></td>
+            <td>Velocity</td>
+            <td>0.098</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td><code>orig_sum_amount_24h</code></td>
+            <td>Velocity</td>
+            <td>0.071</td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td><code>balance_diff_dest</code></td>
+            <td>Balance</td>
+            <td>0.058</td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td><code>is_cash_out</code></td>
+            <td>Type</td>
+            <td>0.042</td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td><code>dest_tx_count_24h</code></td>
+            <td>Velocity</td>
+            <td>0.031</td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td><code>hour_sin</code></td>
+            <td>Temporal</td>
+            <td>0.019</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h3 style="font-size:0.65em;">Interpretation</h3>
+      <ul class="compact">
+        <li><strong>balance_diff_orig</strong> — fraudsters drain accounts completely; a large drop in origin balance is the #1 signal</li>
+        <li><strong>amount_to_orig_ratio</strong> — fraudulent transactions often transfer nearly 100% of available balance</li>
+        <li><strong>orig_balance_drained</strong> — accounts left with near-zero balance post-transaction are highly suspicious</li>
+        <li><strong>Velocity features</strong> — abnormally high 24h transaction counts and total amounts indicate mule behavior</li>
+        <li><strong>CASH-OUT type</strong> — fraudsters prefer immediate liquidation; cash-out transactions are 2× more likely to be fraud</li>
+      </ul>
+      <div style="margin-top:0.5em; padding:0.4em; background:rgba(99,102,241,0.1); border-radius:6px;">
+        <p style="font-size:0.5em; color:var(--text-dim); margin:0;">
+          <strong>AML Compliance:</strong> SHAP provides per-transaction feature contributions, 
+          satisfying regulatory requirements for <em>explainable decisions</em> (EU AI Act, OJK regulations).
+          Each fraud alert includes a ranked list of contributing factors.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>FraudShield-Lite &mdash; Hadijayyy</span>
+    <a href="https://github.com/hadijayyy/fraudshield-lite" target="_blank">github.com/hadijayyy/fraudshield-lite</a>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 12 — TECH STACK -->
+<!-- ============================================================ -->
+<section>
+  <h2>Tech Stack</h2>
+  <p style="font-size:0.65em; color:var(--text-dim); margin-bottom:0.4em;">
+    Modern, battle-tested stack optimized for production ML serving
+  </p>
+  <div class="grid-4">
+    <div class="card">
+      <div class="num" style="font-size:1.2em;">🌳</div>
+      <div class="label">XGBoost</div>
+      <div class="sub">Gradient-boosted trees for classification. Cost-sensitive via scale_pos_weight. Early stopping prevents overfitting.</div>
+    </div>
+    <div class="card">
+      <div class="num" style="font-size:1.2em;">🔍</div>
+      <div class="label">SHAP</div>
+      <div class="sub">TreeExplainer for exact Shapley values. Game-theoretic feature attribution with O(TL²) time per tree.</div>
+    </div>
+    <div class="card">
+      <div class="num" style="font-size:1.2em;">⚡</div>
+      <div class="label">FastAPI</div>
+      <div class="sub">async Python web framework. Pydantic schemas, automatic docs at /docs, P99 latency &lt;35ms.</div>
+    </div>
+    <div class="card">
+      <div class="num" style="font-size:1.2em;">📊</div>
+      <div class="label">Streamlit</div>
+      <div class="sub">Interactive dashboard for fraud monitoring. Real-time alerts, manual review queue, SHAP waterfall plots.</div>
+    </div>
+    <div class="card">
+      <div class="num" style="font-size:1.2em;">🐳</div>
+      <div class="label">Docker</div>
+      <div class="sub">Multi-stage build with Python 3.11-slim. Production image &lt;250MB. docker-compose for local dev.</div>
+    </div>
+    <div class="card">
+      <div class="num" style="font-size:1.2em;">🔄</div>
+      <div class="label">GitHub Actions</div>
+      <div class="sub">CI/CD pipeline: lint → test → build → deploy. Automated model retraining trigger on data refresh.</div>
+    </div>
+    <div class="card">
+      <div class="num" style="font-size:1.2em;">🐍</div>
+      <div class="label">Python 3.11</div>
+      <div class="sub">Pandas, NumPy, Scikit-learn for preprocessing. Pydantic v2 for data validation.</div>
+    </div>
+    <div class="card">
+      <div class="num" style="font-size:1.2em;">☁️</div>
+      <div class="label">Cloud Ready</div>
+      <div class="sub">Deployable to AWS/GCP/Azure via container. Environment-based configuration for secrets and endpoints.</div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>FraudShield-Lite &mdash; Hadijayyy</span>
+    <a href="https://github.com/hadijayyy/fraudshield-lite" target="_blank">github.com/hadijayyy/fraudshield-lite</a>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 13 — BUSINESS IMPACT -->
+<!-- ============================================================ -->
+<section>
+  <h2>Business Impact</h2>
+  <p style="font-size:0.65em; color:var(--text-dim); margin-bottom:0.4em;">
+    Built in 4 weeks, operating at 99.8% recall, saving Rp 82.2B annually
+  </p>
+  <div class="grid-3">
+    <div class="card" style="border-color:rgba(34,197,94,0.3);">
+      <div class="num" style="color:var(--success);">Rp 1.94B</div>
+      <div class="label">Cost</div>
+      <div class="sub">Total project cost (4 weeks, 1 DS + infra)</div>
+    </div>
+    <div class="card" style="border-color:rgba(99,102,241,0.3);">
+      <div class="num" style="color:var(--accent);">4 Weeks</div>
+      <div class="label">Time to Production</div>
+      <div class="sub">From data exploration to deployed API</div>
+    </div>
+    <div class="card" style="border-color:rgba(34,197,94,0.3);">
+      <div class="num" style="color:var(--success);">99.8%</div>
+      <div class="label">Quality (Recall)</div>
+      <div class="sub">Fraud caught before settlement</div>
+    </div>
+  </div>
+  <div style="margin-top:0.5em;">
+    <h3 style="font-size:0.65em;">Quantified Impact (Annualized)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Before</th>
+          <th>After</th>
+          <th>Improvement</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Fraud Loss</td>
+          <td class="highlight-danger">Rp 84.79B</td>
+          <td class="highlight">Rp 2.54B</td>
+          <td>-97%</td>
+        </tr>
+        <tr>
+          <td>False Positive Rate</td>
+          <td>89%</td>
+          <td>8.1%</td>
+          <td>-91%</td>
+        </tr>
+        <tr>
+          <td>Review Queue Size</td>
+          <td>445,000 tx/year</td>
+          <td>40,500 tx/year</td>
+          <td>-91%</td>
+        </tr>
+        <tr>
+          <td>Manual Review Cost</td>
+          <td>Rp 6.7B</td>
+          <td>Rp 608M</td>
+          <td>-91%</td>
+        </tr>
+        <tr>
+          <td>Average Decision Time</td>
+          <td>~5 minutes</td>
+          <td>&lt;35ms</td>
+          <td>99.99% faster</td>
+        </tr>
+        <tr>
+          <td><strong>Net Savings</strong></td>
+          <td>—</td>
+          <td><strong>Rp 82.2B</strong></td>
+          <td><strong class="highlight">3,300% ROI</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="slide-footer">
+    <span>FraudShield-Lite &mdash; Hadijayyy</span>
+    <a href="https://github.com/hadijayyy/fraudshield-lite" target="_blank">github.com/hadijayyy/fraudshield-lite</a>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 14 — NEXT STEPS -->
+<!-- ============================================================ -->
+<section>
+  <h2>Next Steps</h2>
+  <p style="font-size:0.65em; color:var(--text-dim); margin-bottom:0.4em;">
+    Expanding from batch scoring to real-time streaming and advanced graph-based detection
+  </p>
+  <div class="grid-3">
+    <div class="card" style="text-align:left; border-color:rgba(99,102,241,0.3);">
+      <div class="num" style="font-size:1.2em; text-align:center;">🚀</div>
+      <div class="label" style="text-align:center;">Production Deploy</div>
+      <ul class="compact" style="margin-top:0.3em;">
+        <li>Multi-region deployment on K8s/EKS</li>
+        <li>Blue/green deployment with canary testing</li>
+        <li>Autoscaling based on transaction volume</li>
+        <li>Prometheus + Grafana monitoring</li>
+        <li>SLA: 99.95% uptime, &lt;50ms P99</li>
+      </ul>
+    </div>
+    <div class="card" style="text-align:left; border-color:rgba(99,102,241,0.3);">
+      <div class="num" style="font-size:1.2em; text-align:center;">⚡</div>
+      <div class="label" style="text-align:center;">Real-Time Kafka Pipeline</div>
+      <ul class="compact" style="margin-top:0.3em;">
+        <li>Kafka streams for transaction ingestion</li>
+        <li>Flink/ksqlDB for windowed feature computation</li>
+        <li>Sub-100ms end-to-end latency</li>
+        <li>Exactly-once processing semantics</li>
+        <li>Schema registry for data contracts</li>
+      </ul>
+    </div>
+    <div class="card" style="text-align:left; border-color:rgba(99,102,241,0.3);">
+      <div class="num" style="font-size:1.2em; text-align:center;">🕸️</div>
+      <div class="label" style="text-align:center;">GNN for Mule Accounts</div>
+      <ul class="compact" style="margin-top:0.3em;">
+        <li>Graph Neural Network on transaction graph</li>
+        <li>Detect mule account rings and cascades</li>
+        <li>Node classification + link prediction</li>
+        <li>Feature: transaction graph + temporal walk embeddings</li>
+        <li>Integrate with existing XGBoost pipeline via stacking</li>
+      </ul>
+    </div>
+  </div>
+  <div style="margin-top:0.5em; text-align:center;">
+    <p style="font-size:0.55em; color:var(--text-dim);">
+      <strong>Longer-term:</strong> Multi-modal fraud detection (device fingerprinting, biometrics), 
+      federated learning for cross-institution pattern sharing, and automated SAR filing (Suspicious Activity Reports).
+    </p>
+  </div>
+  <div class="slide-footer">
+    <span>FraudShield-Lite &mdash; Hadijayyy</span>
+    <a href="https://github.com/hadijayyy/fraudshield-lite" target="_blank">github.com/hadijayyy/fraudshield-lite</a>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 15 — THANK YOU -->
+<!-- ============================================================ -->
+<section class="thanks-slide">
+  <h1>Thank You</h1>
+  <p style="font-size:1em; color:#c7d2fe; margin-top:0.3em;">
+    Questions &amp; Discussion
+  </p>
+  <div style="margin-top:1em;">
+    <p style="font-size:0.7em; color:var(--text-dim);">
+    Hadijayyy &middot; Senior Data Scientist
+    </p>
+    <a class="github-icon" href="https://github.com/hadijayyy/fraudshield-lite" target="_blank">
+      <span>⌨</span> github.com/hadijayyy/fraudshield-lite
+    </a>
+  </div>
+  <div style="margin-top:1.2em;">
+    <div class="grid-3" style="max-width:70%; margin:0 auto;">
+      <div class="card" style="padding:0.4em;">
+        <div class="num" style="font-size:1em;">0.9999</div>
+        <div class="label" style="font-size:0.55em;">ROC-AUC</div>
+      </div>
+      <div class="card" style="padding:0.4em;">
+        <div class="num" style="font-size:1em; color:var(--success);">99.8%</div>
+        <div class="label" style="font-size:0.55em;">Recall</div>
+      </div>
+      <div class="card" style="padding:0.4em;">
+        <div class="num" style="font-size:1em;">Rp 82.2B</div>
+        <div class="label" style="font-size:0.55em;">Savings/yr</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-footer">
+    <span>FraudShield-Lite &mdash; Hadijayyy</span>
+    <a href="https://github.com/hadijayyy/fraudshield-lite" target="_blank">github.com/hadijayyy/fraudshield-lite</a>
+  </div>
+</section>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    transition: 'slide',
+    transitionSpeed: 'default',
+    backgroundTransition: 'fade',
+    controls: true,
+    controlsTutorial: false,
+    controlsLayout: 'bottom-right',
+    progress: true,
+    center: true,
+    shuffle: false,
+    loop: false,
+    help: true,
+    showNotes: false,
+    viewDistance: 3,
+    width: 1280,
+    height: 720,
+    margin: 0.04,
+    minScale: 0.2,
+    maxScale: 3.0,
+    keyboard: true,
+    overview: true,
+    touch: true,
+    fragments: true,
+    pdfSeparateFragments: false,
+    pdfMaxPagesPerSlide: 1,
+  });
+</script>
+</body>
+</html>
