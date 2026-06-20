@@ -33,3 +33,7 @@ Thumbs.db
 .coverage
 htmlcov/
 coverage.xml
+
+# Data (regeneratable)
+data/*.csv
+data/*.zip
