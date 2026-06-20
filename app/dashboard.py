@@ -58,7 +58,57 @@ def load_reports():
 def load_features():
     if os.path.exists("data/features.csv"):
         return pd.read_csv("data/features.csv")
-    return None
+    # Auto-generate demo data for Streamlit Cloud (no data files needed)
+    return _generate_demo_data()
+
+def _generate_demo_data():
+    """Generate realistic demo data matching the 36-feature schema."""
+    np.random.seed(42)
+    n = 5000
+    df = pd.DataFrame({
+        "step": np.random.randint(1, 744, n),
+        "amount": np.random.exponential(500000, n),
+        "oldbalanceOrg": np.random.exponential(1000000, n),
+        "newbalanceOrig": np.random.exponential(800000, n),
+        "oldbalanceDest": np.random.exponential(500000, n),
+        "newbalanceDest": np.random.exponential(700000, n),
+    })
+    df["balance_diff_orig"] = df["oldbalanceOrg"] - df["newbalanceOrig"]
+    df["balance_diff_dest"] = df["oldbalanceDest"] - df["newbalanceDest"]
+    df["amount_to_orig_ratio"] = df["amount"] / (df["oldbalanceOrg"] + 1)
+    df["amount_to_dest_ratio"] = df["amount"] / (df["oldbalanceDest"] + 1)
+    df["orig_balance_drained"] = ((df["newbalanceOrig"] == 0) & (df["oldbalanceOrg"] > 0)).astype(int)
+    df["dest_balance_received"] = (df["newbalanceDest"] > df["oldbalanceDest"]).astype(int)
+    df["step_tx_count"] = np.random.randint(50, 500, n)
+    df["step_avg_amount"] = df["amount"] * np.random.uniform(0.8, 1.2, n)
+    df["step_total_amount"] = df["step_tx_count"] * df["step_avg_amount"]
+    df["orig_tx_cumcount"] = np.random.randint(1, 100, n)
+    df["orig_amount_cumsum"] = df["amount"] * df["orig_tx_cumcount"]
+    df["orig_amount_cummean"] = df["amount"]
+    df["dest_tx_cumcount"] = np.random.randint(1, 100, n)
+    df["dest_amount_cumsum"] = df["amount"] * np.random.uniform(0.5, 2, n)
+    df["amount_dev_from_orig_mean"] = np.random.normal(0, 100000, n)
+    df["amount_ratio_to_orig_mean"] = np.random.lognormal(0, 0.5, n)
+    # Velocity features
+    df["tx_count_24h"] = np.random.randint(0, 10, n)
+    df["tx_count_7d"] = np.random.randint(0, 30, n)
+    df["amt_sum_24h"] = np.random.exponential(1000000, n)
+    df["amt_sum_7d"] = np.random.exponential(5000000, n)
+    df["amt_mean_24h"] = np.random.exponential(300000, n)
+    df["amt_mean_7d"] = np.random.exponential(400000, n)
+    df["avg_time_between_tx"] = np.random.exponential(24, n)
+    # Type encoding
+    types = np.random.choice(["CASH_OUT", "TRANSFER", "PAYMENT", "CASH_IN", "DEBIT"], n, p=[0.35, 0.25, 0.25, 0.1, 0.05])
+    for t in ["CASH_OUT", "TRANSFER", "PAYMENT", "CASH_IN", "DEBIT"]:
+        df[f"tx_type_{t}"] = (types == t).astype(int)
+    df["hour_of_day"] = df["step"] % 24
+    df["is_night"] = ((df["step"] % 24) >= 22) | ((df["step"] % 24) <= 5)
+    df["is_night"] = df["is_night"].astype(int)
+    # Generate synthetic fraud labels (0.1% rate)
+    fraud_prob = (df["amount_to_orig_ratio"] * 0.3 + df["orig_balance_drained"] * 0.4 + df["is_night"] * 0.1 + np.random.exponential(0.01, n))
+    df["isFraud"] = (fraud_prob > np.percentile(fraud_prob, 99.9)).astype(int)
+    df["isFlaggedFraud"] = 0
+    return df
 
 model = load_model()
 baseline, shift, metrics = load_reports()
@@ -290,9 +340,6 @@ def page_predict():
 def page_performance():
     st.title("📊 Model Performance")
 
-    if features_df is None:
-        st.warning("data/features.csv not found. Run `setup_data.py` first.")
-        return
 
     feature_cols = [c for c in features_df.columns if c not in ["isFraud", "isFlaggedFraud"]]
     test = features_df[features_df["step"] > 600]
@@ -344,9 +391,6 @@ def page_performance():
 def page_explainability():
     st.title("💡 SHAP Explainability")
 
-    if features_df is None:
-        st.warning("data/features.csv not found. Run `setup_data.py` first.")
-        return
 
     try:
         import shap
