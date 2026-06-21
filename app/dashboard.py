@@ -128,6 +128,10 @@ FEATURE_COLS = [
     "tx_type_CASH_IN", "tx_type_CASH_OUT", "tx_type_DEBIT",
     "tx_type_PAYMENT", "tx_type_TRANSFER",
     "hour_of_day", "is_night",
+    "tx_count_24h", "tx_count_7d",
+    "amt_sum_24h", "amt_sum_7d",
+    "amt_mean_24h", "amt_mean_7d",
+    "avg_time_between_tx",
 ]
 
 # ---------------------------------------------------------------------------
@@ -185,7 +189,7 @@ def page_overview():
     # Cost comparison
     st.subheader("💰 Net Value Comparison")
     fig2 = go.Figure()
-    colors = ["#ef4444", "#f59e0b", "#22c55e"]
+    colors = ["#ef4444", "#f59e0b", "#22c55e", "#6366f1"]
     for i, (_, row) in enumerate(df_bl.iterrows()):
         fig2.add_trace(go.Bar(
             name=row["model"].split("(")[0].strip(),
@@ -251,6 +255,15 @@ def page_predict():
         step_tx_count = st.number_input("Transactions in this step", min_value=1, value=100)
         orig_tx_cumcount = st.number_input("Sender total tx count", min_value=1, value=50)
         dest_tx_cumcount = st.number_input("Receiver total tx count", min_value=1, value=50)
+        tx_count_24h = st.number_input("Sender tx in last 24h", min_value=0, value=0)
+        tx_count_7d = st.number_input("Sender tx in last 7d", min_value=0, value=0)
+        st.session_state["tx_count_24h"] = tx_count_24h
+        st.session_state["tx_count_7d"] = tx_count_7d
+        st.session_state["amt_sum_24h"] = float(amount * tx_count_24h)
+        st.session_state["amt_sum_7d"] = float(amount * tx_count_7d)
+        st.session_state["amt_mean_24h"] = float(amount) if tx_count_24h > 0 else 0.0
+        st.session_state["amt_mean_7d"] = float(amount) if tx_count_7d > 0 else 0.0
+        st.session_state["avg_time_between_tx"] = 24.0 if tx_count_24h > 1 else 0.0
 
     if st.button("🚀 Predict Fraud", type="primary", use_container_width=True):
         # Build feature vector
@@ -294,10 +307,17 @@ def page_predict():
         features[type_map[tx_type]] = 1.0
         features["hour_of_day"] = step % 24
         features["is_night"] = int((step % 24) >= 22 or (step % 24) <= 5)
+        features["tx_count_24h"] = st.session_state.get("tx_count_24h", 0)
+        features["tx_count_7d"] = st.session_state.get("tx_count_7d", 0)
+        features["amt_sum_24h"] = st.session_state.get("amt_sum_24h", 0.0)
+        features["amt_sum_7d"] = st.session_state.get("amt_sum_7d", 0.0)
+        features["amt_mean_24h"] = st.session_state.get("amt_mean_24h", 0.0)
+        features["amt_mean_7d"] = st.session_state.get("amt_mean_7d", 0.0)
+        features["avg_time_between_tx"] = st.session_state.get("avg_time_between_tx", 0.0)
 
         x = np.array([[features[col] for col in FEATURE_COLS]])
         proba = float(model.predict_proba(x)[0, 1])
-        pred = 1 if proba >= 0.5 else 0
+        pred = 1 if proba >= 0.45 else 0
 
         # Display result
         st.markdown("---")

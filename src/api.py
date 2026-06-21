@@ -20,6 +20,7 @@ import xgboost as xgb
 
 from .utils import load_config, setup_logging
 from .features import get_feature_columns
+from .feedback_collector import log_prediction
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +35,8 @@ MODEL_PATH = "models/xgboost_model.json"
 class PredictRequest(BaseModel):
     """Schema for a single prediction request."""
 
-    transaction_id: str = Field(..., description="Unique transaction identifier")
-    user_id: str = Field(..., description="Account / user identifier")
+    transaction_id: str = Field(..., min_length=1, max_length=128, description="Unique transaction identifier")
+    user_id: str = Field(..., min_length=1, max_length=128, description="Account / user identifier")
     amount: float = Field(..., gt=0, description="Transaction amount")
     timestamp: str = Field(..., description="ISO-8601 transaction timestamp")
     # Additional features can be added as needed
@@ -157,6 +158,19 @@ async def predict(request: PredictRequest) -> PredictResponse:
     except Exception as exc:
         logger.error("Prediction failed: %s", exc)
         raise HTTPException(status_code=500, detail=f"Prediction error: {exc}")
+
+    # Log prediction for feedback loop
+    try:
+        log_prediction(
+            prediction_id=request.transaction_id,
+            user_id=request.user_id,
+            amount=request.amount,
+            fraud_probability=fraud_probability,
+            prediction=prediction,
+            decision=decision,
+        )
+    except Exception:
+        pass  # Non-critical — don't fail prediction on logging error
 
     return PredictResponse(
         transaction_id=request.transaction_id,

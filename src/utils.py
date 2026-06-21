@@ -58,6 +58,8 @@ def setup_logging(
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
     root_logger = logging.getLogger()
+    if root_logger.handlers:
+        return  # Already configured
     root_logger.setLevel(level)
 
     # Console handler

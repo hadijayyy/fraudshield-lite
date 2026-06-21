@@ -116,7 +116,7 @@ def main():
     
     # Step 1: Download
     print("\n[1/3] Download PaySim dataset")
-    if args.skip-download:
+    if args.skip_download:
         print("  Skipped (--skip-download)")
         if not os.path.exists(SUBSET_CSV):
             print(f"  ❌ {SUBSET_CSV} not found. Run without --skip-download first.")

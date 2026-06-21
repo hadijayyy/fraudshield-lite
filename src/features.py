@@ -176,7 +176,7 @@ def _create_rolling_velocity_features(df: pd.DataFrame) -> pd.DataFrame:
             df[col_sum] = 0.0
             df[col_mean] = 0.0
 
-        df[col_count] = df[col_count].fillna(0).astype(np.int32)
+        df[col_count] = df[col_count].fillna(0).astype(np.int64)
         df[col_sum] = df[col_sum].fillna(0.0)
         df[col_mean] = df[col_mean].fillna(0.0)
 
@@ -189,7 +189,7 @@ def _create_rolling_velocity_features(df: pd.DataFrame) -> pd.DataFrame:
         df = df.merge(
             all_prev[["prev_count", "last_step"]], on="_orig_idx", how="left"
         )
-        df["prev_count"] = df["prev_count"].fillna(0).astype(np.int32)
+        df["prev_count"] = df["prev_count"].fillna(0).astype(np.int64)
         df["last_step"] = df["last_step"].fillna(0)
 
         df["avg_time_between_tx"] = np.where(

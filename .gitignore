@@ -24,7 +24,7 @@ logs/
 Thumbs.db
 
 # Notebook checkpoints
-.ipynyn_checkpoints/
+.ipynb_checkpoints/
 
 # Docker
 .dockerignore
