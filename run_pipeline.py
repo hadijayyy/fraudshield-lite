@@ -51,6 +51,7 @@ from src.features import create_all_features
 from src.models import (
     calculate_business_cost,
     find_optimal_threshold,
+    time_based_split,
     train_baseline,
     train_xgboost,
     evaluate_model,
@@ -104,34 +105,19 @@ def main():
     print(f"   Done in {time.time() - t1:.1f}s. Shape: {df_feat.shape}")
 
     # ===================================================================
-    # 3. STEP-BASED SPLIT (train <= 600, test > 600)
+    # 3. STEP-BASED SPLIT (time_based_split from models.py)
     # ===================================================================
     print(f"\n{'='*70}")
-    print("STEP 3: Step-based split (train <= 600, test > 600)...")
-    train_df = df_feat[df_feat["step"] <= 600].copy()
-    test_df = df_feat[df_feat["step"] > 600].copy()
-
-    # Create a val set from the last portion of train for early stopping
-    unique_train_steps = sorted(train_df["step"].unique())
-    val_step_cut = int(len(unique_train_steps) * 0.85)
-    val_steps = unique_train_steps[val_step_cut:]
-    train_steps = unique_train_steps[:val_step_cut]
-
-    val_df = train_df[train_df["step"].isin(val_steps)].copy()
-    train_df = train_df[train_df["step"].isin(train_steps)].copy()
-
-    assert set(train_df["step"].unique()).isdisjoint(set(val_df["step"].unique())), \
-        "LEAKAGE: train-val step overlap!"
-    assert set(val_df["step"].unique()).isdisjoint(set(test_df["step"].unique())), \
-        "LEAKAGE: val-test step overlap!"
+    print("STEP 3: Step-based split (time_based_split)...")
+    train_df, val_df, test_df = time_based_split(
+        df_feat, time_col="step", test_size=0.2, val_size=0.1
+    )
 
     for name, split in [("Train", train_df), ("Val", val_df), ("Test", test_df)]:
         fraud_n = split["isFraud"].sum()
         steps = f"step {split['step'].min()}-{split['step'].max()}"
         print(f"   {name}: {len(split):>10,} rows | "
               f"fraud: {fraud_n:>6} ({fraud_n / len(split) * 100:.3f}%) | {steps}")
-
-    print(f"   Zero step overlap verified!")
 
     # ── Prepare feature matrices ───────────────────────────────────────
     target_col = "isFraud"
@@ -159,19 +145,22 @@ def main():
     t2 = time.time()
     baseline_results = train_baseline(X_train, y_train, X_test, y_test)
 
-    # Also compute business cost for baselines
+    # Compute business cost from confusion matrices returned by train_baseline
     baseline_cost = {}
-    for name, clf in [
-        ("dummy", DummyClassifier(strategy="most_frequent", random_state=42)),
-        ("logistic_regression",
-         LogisticRegression(class_weight="balanced", max_iter=2000, random_state=42)),
-    ]:
-        clf.fit(X_train, y_train)
-        y_pred = clf.predict(X_test)
-        cost = calculate_business_cost(y_test, y_pred,
-                                        fraud_cost=FRAUD_COST,
-                                        false_positive_cost=FP_COST)
-        baseline_cost[name] = cost
+    for name in ["dummy", "logistic_regression"]:
+        cm = baseline_results[name]["confusion_matrix"]
+        tn, fp, fn, tp = cm[0][0], cm[0][1], cm[1][0], cm[1][1]
+        net_value = tp * FRAUD_COST - fn * FRAUD_COST - fp * FP_COST
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        baseline_cost[name] = {
+            "net_value_rp": net_value,
+            "fraud_saved_rp": tp * FRAUD_COST,
+            "fraud_missed_rp": fn * FRAUD_COST,
+            "fp_cost_rp": fp * FP_COST,
+            "precision": precision,
+            "recall": recall,
+        }
 
     for name, metrics in baseline_results.items():
         net = baseline_cost.get(name, {}).get("net_value_rp", 0)
@@ -236,7 +225,6 @@ def main():
 
     # Also evaluate at threshold=0.5 (default)
     y_pred_default = (y_prob_test >= 0.5).astype(int)
-    default_auc = roc_auc_score(y_test, y_prob_test)  # same
     default_f1 = f1_score(y_test, y_pred_default, zero_division=0)
     default_precision = precision_score(y_test, y_pred_default, zero_division=0)
     default_recall = recall_score(y_test, y_pred_default, zero_division=0)

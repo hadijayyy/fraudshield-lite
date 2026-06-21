@@ -116,8 +116,6 @@ def walk_forward_split(
     Tuple[pd.DataFrame, pd.DataFrame]
         (train_df, test_df) for one fold, both chronologically sorted.
     """
-    from sklearn.model_selection import TimeSeriesSplit
-
     data = data.sort_values(time_col).reset_index(drop=True)
     unique_steps = sorted(data[time_col].unique())
     n_steps = len(unique_steps)
@@ -310,7 +308,6 @@ def train_xgboost(
             "learning_rate": 0.05,
             "scale_pos_weight": scale_pos_weight,
             "eval_metric": "auc",
-            "early_stopping_rounds": 50,
             "random_state": 42,
             "verbosity": 1,
             "use_label_encoder": False,
@@ -323,6 +320,7 @@ def train_xgboost(
         y_train,
         eval_set=[(x_val, y_val)],
         verbose=True,
+        early_stopping_rounds=50,
     )
 
     return model

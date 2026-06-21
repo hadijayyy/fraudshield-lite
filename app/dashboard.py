@@ -13,6 +13,7 @@ Run: streamlit run app/dashboard.py
 import json
 import os
 import sys
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -24,6 +25,18 @@ from sklearn.metrics import confusion_matrix, roc_curve, auc, precision_recall_c
 
 # Add parent dir for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
+# ---------------------------------------------------------------------------
+# Config loader
+# ---------------------------------------------------------------------------
+@st.cache_data
+def _load_dashboard_config():
+    cfg_path = Path("config/config.yaml")
+    if cfg_path.exists():
+        import yaml
+        with open(cfg_path) as f:
+            return yaml.safe_load(f) or {}
+    return {}
 
 # ---------------------------------------------------------------------------
 # Page config
@@ -113,6 +126,8 @@ def _generate_demo_data():
 model = load_model()
 baseline, shift, metrics = load_reports()
 features_df = load_features()
+dashboard_config = _load_dashboard_config()
+DEFAULT_THRESHOLD = dashboard_config.get("thresholds", {}).get("default", 0.45)
 
 # Feature columns
 FEATURE_COLS = [
@@ -317,7 +332,7 @@ def page_predict():
 
         x = np.array([[features[col] for col in FEATURE_COLS]])
         proba = float(model.predict_proba(x)[0, 1])
-        pred = 1 if proba >= 0.45 else 0
+        pred = 1 if proba >= DEFAULT_THRESHOLD else 0
 
         # Display result
         st.markdown("---")
@@ -513,13 +528,27 @@ def page_walkforward():
 
     # Distribution shift explanation
     st.subheader("🔄 Distribution Shift")
-    st.markdown("""
-    | Fold | Train Fraud Rate | Test Fraud Rate | Shift |
-    |------|:----------------:|:---------------:|:-----:|
-    | 1 | 0.091% | 0.101% | 1.1× |
-    | 2 | 0.086% | 0.709% | 8.2× |
-    | 3 | 0.110% | 1.601% | 14.5× |
+    shift_rows = []
+    for f in folds:
+        shift_ratio = f.get("test_fraud_rate", 0) / max(f.get("train_fraud_rate", 0.001), 0.0001)
+        shift_rows.append({
+            "Fold": f["fold"],
+            "Train Fraud Rate": f"{f.get('train_fraud_rate', 0)*100:.3f}%",
+            "Test Fraud Rate": f"{f.get('test_fraud_rate', 0)*100:.3f}%",
+            "Shift": f"{shift_ratio:.1f}×",
+        })
+    if shift_rows:
+        df_shift = pd.DataFrame(shift_rows)
+        # Build a markdown table string
+        header = "| Fold | Train Fraud Rate | Test Fraud Rate | Shift |\n"
+        header += "|------|:----------------:|:---------------:|:-----:|\n"
+        body_lines = []
+        for _, r in df_shift.iterrows():
+            body_lines.append(f"| {int(r['Fold'])} | {r['Train Fraud Rate']} | {r['Test Fraud Rate']} | {r['Shift']} |")
+        body = "\n".join(body_lines)
+        st.markdown(header + body)
 
+    st.markdown("""
     **Key insight**: Fraud rate increases over time. Fold 3 (latest period) has 14× more
     fraud than training. This is realistic — fraud patterns evolve.
     """)

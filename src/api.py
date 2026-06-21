@@ -38,7 +38,7 @@ class PredictRequest(BaseModel):
     transaction_id: str = Field(..., min_length=1, max_length=128, description="Unique transaction identifier")
     user_id: str = Field(..., min_length=1, max_length=128, description="Account / user identifier")
     amount: float = Field(..., gt=0, description="Transaction amount")
-    timestamp: str = Field(..., description="ISO-8601 transaction timestamp")
+    timestamp: Optional[str] = Field(None, description="ISO-8601 transaction timestamp")
     # Additional features can be added as needed
     extra_features: Dict[str, float] = Field(default_factory=dict)
 

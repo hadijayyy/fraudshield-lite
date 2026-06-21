@@ -8,7 +8,7 @@ checks.
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -18,6 +18,21 @@ import pandas as pd
 from src.monitoring import calculate_psi
 
 logger = logging.getLogger(__name__)
+
+# Max size for JSONL log files before rotation (10 MB)
+_MAX_LOG_BYTES = 10 * 1024 * 1024
+
+
+def _rotate_jsonl(log_path: Path) -> None:
+    """Rotate a single JSONL log file, keeping up to 5 backups."""
+    for i in range(4, 0, -1):
+        old = log_path.with_suffix(f".jsonl.{i}")
+        if old.exists():
+            if i == 4:
+                old.unlink()
+            else:
+                old.rename(log_path.with_suffix(f".jsonl.{i + 1}"))
+    log_path.rename(log_path.with_suffix(".jsonl.1"))
 
 
 def log_prediction(
@@ -53,7 +68,7 @@ def log_prediction(
     """
     record = {
         "prediction_id": prediction_id,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "user_id": user_id,
         "transaction_id": transaction_id,
         "score": score,
@@ -64,6 +79,11 @@ def log_prediction(
 
     log_file = Path(log_path)
     log_file.parent.mkdir(parents=True, exist_ok=True)
+
+    # Rotate if log exceeds 10 MB
+    if log_file.exists() and log_file.stat().st_size > 10 * 1024 * 1024:
+        _rotate_jsonl(log_file)
+
     with open(log_file, "a") as f:
         f.write(json.dumps(record) + "\n")
 
@@ -91,13 +111,18 @@ def log_confirmed_label(
     """
     record = {
         "prediction_id": prediction_id,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "confirmed_label": confirmed_label,
         "reviewer_id": reviewer_id,
     }
 
     log_file = Path(log_path)
     log_file.parent.mkdir(parents=True, exist_ok=True)
+
+    # Rotate if log exceeds 10 MB
+    if log_file.exists() and log_file.stat().st_size > 10 * 1024 * 1024:
+        _rotate_jsonl(log_file)
+
     with open(log_file, "a") as f:
         f.write(json.dumps(record) + "\n")
 
@@ -154,11 +179,11 @@ def get_retrain_candidates(
     if not pred_records or not label_records:
         return pd.DataFrame()
 
-    pred_df = pd.DataFrame(pred_records)
-    label_df = pd.DataFrame(label_records)
+    pred_df = pd.DataFrame(pred_records).drop_duplicates(subset=["prediction_id"])
+    label_df = pd.DataFrame(label_records).drop_duplicates(subset=["prediction_id"])
 
     # Inner join on prediction_id — keeps only records that have a confirmed label
-    merged = pd.merge(pred_df, label_df, on="prediction_id", how="inner")
+    merged = pd.merge(pred_df, label_df, on="prediction_id", how="inner", validate="one_to_one")
 
     # Filter to rows where confirmed_label is not null
     df = merged[merged["confirmed_label"].notna()].copy()
@@ -167,7 +192,7 @@ def get_retrain_candidates(
 
 
 def model_health_check(
-    recent_predictions: pd.DataFrame,
+    recent_predictions: pd.DataFrame,  # noqa: ARG001 — kept for API compatibility
     reference_scores: np.ndarray,
     current_scores: np.ndarray,
 ) -> Dict[str, Any]:

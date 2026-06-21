@@ -16,9 +16,12 @@ Input:  subset_500k.csv (or any PaySim-format CSV)
 Output: DataFrame with all features + isFraud + isFlaggedFraud
 """
 
+import logging
 import numpy as np
 import pandas as pd
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 def create_all_features(
@@ -41,19 +44,19 @@ def create_all_features(
     pd.DataFrame
         DataFrame with engineered features + isFraud + isFlaggedFraud.
     """
-    print("  Creating balance features...")
+    logger.info("  Creating balance features...")
     df = _create_balance_features(df)
 
-    print("  Creating velocity features...")
+    logger.info("  Creating velocity features...")
     df = _create_velocity_features(df)
 
-    print("  Creating rolling velocity features (24h/7d)...")
+    logger.info("  Creating rolling velocity features (24h/7d)...")
     df = _create_rolling_velocity_features(df)
 
-    print("  Creating type encoding...")
+    logger.info("  Creating type encoding...")
     df = pd.get_dummies(df, columns=["type"], prefix="tx_type", drop_first=False)
 
-    print("  Creating temporal features...")
+    logger.info("  Creating temporal features...")
     df["hour_of_day"] = df["step"] % 24
     df["is_night"] = (((df["step"] % 24) >= 22) | ((df["step"] % 24) <= 5)).astype(int)
 
@@ -64,14 +67,14 @@ def create_all_features(
         df = df.sort_values("step").reset_index(drop=True)
 
     df = df.fillna(0)
-    print(f"  Final feature matrix: {df.shape[0]:,} rows × {df.shape[1]} columns")
+    logger.info("  Final feature matrix: %s rows x %s columns", f"{df.shape[0]:,}", df.shape[1])
     return df
 
 
 def _create_balance_features(df: pd.DataFrame) -> pd.DataFrame:
     """Balance-derived features (6 total)."""
     df["balance_diff_orig"] = df["oldbalanceOrg"] - df["newbalanceOrig"]
-    df["balance_diff_dest"] = df["oldbalanceDest"] - df["newbalanceDest"]
+    df["balance_diff_dest"] = df["newbalanceDest"] - df["oldbalanceDest"]
     df["amount_to_orig_ratio"] = df["amount"] / (df["oldbalanceOrg"] + 1)
     df["amount_to_dest_ratio"] = df["amount"] / (df["oldbalanceDest"] + 1)
     df["orig_balance_drained"] = (

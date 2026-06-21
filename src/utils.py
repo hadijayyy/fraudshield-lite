@@ -7,6 +7,7 @@ concerns used by multiple modules.
 
 import logging
 import sys
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, Dict
 
@@ -69,8 +70,8 @@ def setup_logging(
     console_handler.setFormatter(console_fmt)
     root_logger.addHandler(console_handler)
 
-    # File handler
-    file_handler = logging.FileHandler(log_path)
+    # File handler (rotating, 10 MB max, 5 backups)
+    file_handler = RotatingFileHandler(log_path, maxBytes=10 * 1024 * 1024, backupCount=5)
     file_handler.setLevel(level)
     file_fmt = logging.Formatter(
         "%(asctime)s [%(levelname)s] %(name)s (%(filename)s:%(lineno)d): %(message)s"
